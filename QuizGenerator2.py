@@ -93,40 +93,42 @@ class Quiz:
 
 
 
-# Function to convert the GPT response into a Question object and append it to the questions list
-# Function to generate a new question via GPT-3 and append it to the session state questions
-def generate_and_append_question(user_prompt):
+# Function to convert the GPT response into a Questions object and append each question to the questions list
+# Function to generate questions via GPT-4 and append it to the session state questions
+def generate_and_append_questions(user_prompt):
+    """
     history = ""
     for q in st.session_state.questions:
         history += f"Question: {q.question} Answer: {q.correct_answer}\n"
-
+    
     st.write(history)
-
-    gpt_prompt = '''Generate a JSON response for a trivia question including the question, options, correct answer, and explanation. The format should be as follows:
-
-{
-  "Question": "The actual question text goes here?",
-  "Options": ["Option1", "Option2", "Option3", "Option4"],
-  "CorrectAnswer": "TheCorrectAnswer",
-  "Explanation": "A detailed explanation on why the correct answer is correct."
-}'''
+    """
+    gpt_prompt = '''Generate a JSON response containing 3 questions, each one of these questions should include the question itself, options, correct answer, and explanation. The format for each one question should be as follows:
+    {
+    "Question": "The actual question text goes here?",
+    "Options": ["Option1", "Option2", "Option3", "Option4"],
+    "CorrectAnswer": "TheCorrectAnswer",
+    "Explanation": "A detailed explanation on why the correct answer is correct."
+    }'''
     try:
         response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4-turbo",
             messages=[
                 {"role": "system", "content": gpt_prompt},
-                {"role": "user", "content": f"Create a question about : {user_prompt} that is different from those : {history}"}
+                {"role": "user", "content": f"Create questions about : {user_prompt}"} #that each one is different from those : {history}"}
             ]
         )
         gpt_response = json.loads(response.choices[0].message.content)  # Assuming this returns the correct JSON structure
-        new_question = Question(
-            question=gpt_response["Question"],
-            options=gpt_response["Options"],
-            correct_answer=gpt_response["CorrectAnswer"],
-            explanation=gpt_response["Explanation"]
-        )
         st.write(gpt_response)
-        st.session_state.questions.append(new_question)
+        
+        for q in gpt_response["Questions"]: 
+            new_question = Question(
+                question=q["Question"],
+                options=q["Options"],
+                correct_answer=q["CorrectAnswer"],
+                explanation=q["Explanation"])
+            #st.write(new_question.correct_answer)
+            st.session_state.questions.append(new_question)
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
 
@@ -138,6 +140,6 @@ if 'quiz_initialized' not in st.session_state:
 user_input = st.text_input("Add your preferences")
 
 if st.button('Generate New Question'):
-    generate_and_append_question(user_input)
+    generate_and_append_questions(user_input)
 
 st.session_state.quiz.display_quiz()
