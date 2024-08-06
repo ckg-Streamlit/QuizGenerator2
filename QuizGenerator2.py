@@ -1,6 +1,11 @@
 import streamlit as st
 from openai import OpenAI
 import json
+import time
+
+#I have modified the Intial Quiz generator to create a more generic quiz generator that can
+#create quizzes based on the the topic that the user inputs
+
 
 # Initialize OpenAI client
 client = OpenAI(api_key=st.secrets["OPEN_API_KEY"])
@@ -48,6 +53,7 @@ class Quiz:
             st.session_state.answers_submitted += 1
             if st.session_state.current_question_index < len(self.questions) - 1:
                 st.session_state.current_question_index += 1
+            
             st.rerun()
 
     def check_answer(self, user_answer):
@@ -56,13 +62,18 @@ class Quiz:
             st.session_state.score += 1
         else:
             st.error("Wrong answer!")
-        if self.questions[st.session_state.current_question_index].explanation:
-            st.info(self.questions[st.session_state.current_question_index].explanation)
+            if self.questions[st.session_state.current_question_index].explanation:
+                st.info(self.questions[st.session_state.current_question_index].explanation)
+            #to briefly display the right answer
+            time.sleep(2)
 
     def display_results(self):
         st.write(f"Quiz completed! Your score: {st.session_state.score}/{len(self.questions)}")
         if st.session_state.score == len(self.questions):
             st.success("Congrats! You got all answers correct!")
+            st.write("The correct answers are:")
+            for n,q in enumerate(self.questions):
+                st.write(f'Answer {n} : {q.correct_answer}')
             st.balloons()
         else:
             st.error("You didn't get all answers correct. Try again!")
